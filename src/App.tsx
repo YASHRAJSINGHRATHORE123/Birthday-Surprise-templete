@@ -273,13 +273,38 @@ const FloatingBalloons = () => {
 
   const [popTexts, setPopTexts] = useState<{id: number, x: number, y: number, text: string}[]>([]);
 
-  const popBalloon = (id: number, e: React.MouseEvent, text: string) => {
+  const triggerPop = (id: number, x: number, y: number, text: string) => {
     setBalloons(prev => prev.map(b => b.id === id ? { ...b, popped: true } : b));
-    const newText = { id: Date.now(), x: e.clientX, y: e.clientY, text };
+    const newText = { id: Date.now() + Math.random(), x, y, text };
     setPopTexts(prev => [...prev, newText]);
     setTimeout(() => {
       setPopTexts(prev => prev.filter(t => t.id !== newText.id));
     }, 1500);
+
+    // Respawn balloon after a delay
+    setTimeout(() => {
+      setBalloons(prev => prev.map(b => b.id === id ? { 
+        ...b, 
+        popped: false, 
+        left: `${5 + Math.random() * 90}vw`,
+        delay: Math.random() * 2, // shorter delay for respawn
+        duration: 12 + Math.random() * 10,
+        color: ['bg-pink-500', 'bg-purple-500', 'bg-red-400', 'bg-amber-400', 'bg-blue-400'][Math.floor(Math.random() * 5)],
+        popMessage: ['Smile! ✨', 'Stay Blessed! 🙏', 'Keep Shining! 🌟', 'Happy Bday! 🎉', 'You are loved! 💖'][Math.floor(Math.random() * 5)]
+      } : b));
+    }, 2000);
+  };
+
+  const popBalloon = (id: number, e: React.MouseEvent, text: string) => {
+    triggerPop(id, e.clientX, e.clientY, text);
+  };
+
+  const autoPopBalloon = (id: number, text: string, leftStr: string) => {
+    // Calculate approximate X based on left percentage
+    const leftPercent = parseFloat(leftStr);
+    const x = (leftPercent / 100) * window.innerWidth;
+    const y = 50; // Pop exactly at the top edge, text slightly below
+    triggerPop(id, x, y, text);
   };
 
   return (
@@ -290,8 +315,9 @@ const FloatingBalloons = () => {
             {!b.popped && (
               <motion.div
                 initial={{ y: '110vh', x: 0 }}
-                animate={{ y: '-20vh', x: [0, Math.random() * 100 - 50, 0] }}
-                transition={{ duration: b.duration, delay: b.delay, repeat: Infinity, ease: "linear" }}
+                animate={{ y: '0vh', x: [0, Math.random() * 100 - 50, 0] }}
+                transition={{ duration: b.duration, delay: b.delay, ease: "linear" }}
+                onAnimationComplete={() => autoPopBalloon(b.id, b.popMessage, b.left)}
                 className="absolute pointer-events-auto cursor-crosshair"
                 style={{ left: b.left }}
                 onClick={(e) => popBalloon(b.id, e, b.popMessage)}
@@ -465,9 +491,10 @@ export default function App() {
   return (
     <>
       {/* Background Music - Replace src with your preferred Lofi MP3 URL */}
+      {/* Note: Pixabay blocks direct links. Download the file and upload it to the 'public' folder as 'happy-birthday-lofi.mp3' to use it. */}
       <audio 
         ref={audioRef} 
-        src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" 
+        src="/happy-birthday-lofi.mp3" 
         loop 
         preload="auto" 
       />
