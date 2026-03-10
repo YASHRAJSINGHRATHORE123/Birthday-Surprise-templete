@@ -217,6 +217,7 @@ const Cake = ({ onBlow, isBlown }: { onBlow: () => void, isBlown: boolean }) => 
 // FlipCard Component
 const FlipCard: React.FC<{ i: number }> = ({ i }) => {
   const [isFlipped, setIsFlipped] = useState(false);
+
   const messages = [
     "Your smile lights up the room! ✨",
     "A heart of gold and hands that heal 💖",
@@ -244,7 +245,7 @@ const FlipCard: React.FC<{ i: number }> = ({ i }) => {
 
   return (
     <div 
-      className="aspect-[4/5] [perspective:1000px] cursor-pointer group"
+      className="aspect-[4/5] [perspective:1000px] cursor-pointer group relative"
       onClick={() => setIsFlipped(!isFlipped)}
     >
       <motion.div
@@ -256,8 +257,9 @@ const FlipCard: React.FC<{ i: number }> = ({ i }) => {
         <div className="absolute inset-0 [backface-visibility:hidden] rounded-3xl overflow-hidden border border-white/10 shadow-xl">
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10"></div>
           <img 
-            src={`https://picsum.photos/seed/sahiba${i + 10}/600/800`} 
-            alt="Memory" 
+            src={`/memory-${i}.jpg`} 
+            onError={(e) => { e.currentTarget.src = `https://picsum.photos/seed/sahiba${i + 10}/600/800` }}
+            alt={`Memory ${i}`} 
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
             referrerPolicy="no-referrer"
           />
@@ -296,19 +298,17 @@ const FloatingBalloons = () => {
   const [popTexts, setPopTexts] = useState<{id: number, x: number, y: number, text: string, color: string}[]>([]);
   const [blasts, setBlasts] = useState<{id: number, x: number, y: number, color: string}[]>([]);
   const timeoutsRef = useRef<NodeJS.Timeout[]>([]);
+  const balloonsRef = useRef(balloons);
 
   useEffect(() => {
-    return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      timeoutsRef.current.forEach(clearTimeout);
-    };
-  }, []);
+    balloonsRef.current = balloons;
+  }, [balloons]);
 
   const triggerPop = (id: number, x: number, y: number, text: string, color: string) => {
     setBalloons(prev => prev.map(b => b.id === id ? { ...b, popped: true } : b));
     
     // Add blast effect
-    const blastId = Date.now();
+    const blastId = Date.now() + Math.random();
     setBlasts(prev => [...prev, { id: blastId, x, y, color }]);
     const blastTimeout = setTimeout(() => {
       setBlasts(prev => prev.filter(b => b.id !== blastId));
@@ -339,6 +339,26 @@ const FloatingBalloons = () => {
     }, 3000);
     timeoutsRef.current.push(respawnTimeout);
   };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const unpopped = balloonsRef.current.filter(b => !b.popped);
+      if (unpopped.length > 0) {
+        const randomBalloon = unpopped[Math.floor(Math.random() * unpopped.length)];
+        const leftPercent = parseFloat(randomBalloon.left);
+        const x = (leftPercent / 100) * window.innerWidth;
+        const y = window.innerHeight / 2 + (Math.random() * 200 - 100);
+        triggerPop(randomBalloon.id, x, y, randomBalloon.popMessage, randomBalloon.color);
+      }
+    }, 3000);
+
+    return () => {
+      clearInterval(interval);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      timeoutsRef.current.forEach(clearTimeout);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const popBalloon = (id: number, e: React.MouseEvent, text: string, color: string) => {
     triggerPop(id, e.clientX, e.clientY, text, color);
@@ -483,11 +503,17 @@ const SurpriseView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#0a0514] px-4 text-pink-300 font-script text-xl md:text-2xl whitespace-nowrap">
                 A Special Note For You
               </div>
-              <p className="italic text-pink-100/80 text-base md:text-xl leading-relaxed mt-2">
-                "You are not just an amazing doctor, but an incredible person. Thank you for always being there and making everyone's life brighter. Wishing you the happiest birthday ever!"
-              </p>
+              <div className="italic text-pink-100/80 text-base md:text-xl leading-relaxed mt-2 space-y-4">
+                <p>
+                  "You’re on your way to becoming an amazing doctor, and I truly admire your dedication and dreams.
+                  Keep shining and never stop believing in yourself."
+                </p>
+                <p>
+                  "Happy Birthday and wishing you all the success and happiness in the world."
+                </p>
+              </div>
               <p className="mt-4 md:mt-6 text-right text-pink-300 font-medium text-base md:text-lg">
-                — With lots of love ❤️
+                — YR Rathore
               </p>
             </div>
 
@@ -570,7 +596,7 @@ export default function App() {
     }
 
     const hearts = Array.from({ length: 20 }).map((_, i) => ({
-      id: Date.now() + i,
+      id: Date.now() + Math.random(),
       left: `${20 + Math.random() * 60}vw`,
       top: `${30 + Math.random() * 40}vh`,
       emoji: ['💖','💝','💗','💓','✨','🌸','🌷','💫'][Math.floor(Math.random() * 8)]
@@ -671,7 +697,7 @@ export default function App() {
                     <button 
                       onClick={() => {
                         const newHearts = Array.from({ length: 5 }).map((_, i) => ({
-                          id: Date.now() + i,
+                          id: Date.now() + Math.random(),
                           left: `${40 + Math.random() * 20}vw`,
                           top: `60vh`,
                           emoji: ['✨', '⭐', '🌟', '💫', '💖'][Math.floor(Math.random() * 5)]
