@@ -86,3 +86,4 @@ Currently, the app plays a default Happy Birthday song from a web link. Here is 
    npm run build
    ```
    Made with ❤️ by Yashraj Singh Rathore
+   © 2026 Yashraj Rathore
